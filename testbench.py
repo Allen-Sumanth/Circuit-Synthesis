@@ -5,7 +5,7 @@ s = symbols("s")
 num_input = "s**4+5*s**2+4"
 denom_input = "s*(s**2+2)"
 part_test_num = "(s+1)*(s+4)"
-part_test_denom = "(s+3)*(s+5)"
+part_test_denom = "(s+3)*(s+5)**3*(s+1)"
 
 # num, denom = sympify(num_input), sympify(denom_input)
 # numerator, denominator = num.as_poly(s), denom.as_poly(s)
@@ -32,9 +32,11 @@ part_test_denom = "(s+3)*(s+5)"
 
 # print(quotient.coeff_monomial(1/s))
 
-dividend = sympify("42*s")
-divisor = sympify("6*s")
-ans = div(dividend, divisor, domain='QQ')
-quotient = ans[0]
-remainder = ans[1]
-print(remainder.degree())
+numerator, denominator = sympify("x**2+2*x+1"), sympify("(x+1)*(x+4)")
+zeroes = numerator.as_poly(s).all_roots()
+poles = denominator.as_poly(s).all_roots()
+# partial_fraction = apart(numerator / (denominator*s))
+print("Zeroes: ", zeroes)
+# for term in (partial_fraction).as_ordered_terms():
+#     term = term*s
+#     print(term)

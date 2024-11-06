@@ -6,26 +6,81 @@ from math import ceil
 
 init_printing()
 
-
 s = symbols("s")
 
 optno = 0
 
 def synthesize(num_raw, den_raw):
     numerator, denominator = sympify(num_raw), sympify(den_raw)
+    zeroes = numerator.as_poly(s).all_roots()
+    print("Zeroes: ", zeroes)
+    poles = denominator.as_poly(s).all_roots()
+    print("Poles: ", poles)
     partial_fraction = apart(numerator / denominator)
     #for debugging purposes
     print("\nPartial fraction:", partial_fraction,"\n")
     
     # Assign each option that we get to the specific function eg. foster1_computing_function
     if optno == 0:
-        foster1_lc(partial_fraction)
+        for term in partial_fraction.as_ordered_terms():
+            num, denom = fraction(term)
+            if denom.as_poly(s).degree() == 2:
+                foster1_lc(partial_fraction)
+        else:
+            if zeroes[-1] < poles[-1]:
+                foster1_rc(partial_fraction)
+            if zeroes[-1] >  poles[-1]:
+                modded_f1_fracs = apart(numerator / (denominator*s))
+                foster1_rl(modded_f1_fracs)
     elif optno == 1:
-        foster2_lc(partial_fraction)
+        for term in partial_fraction.as_ordered_terms():
+            num, denom = fraction(term)
+            if denom.as_poly(s).degree() == 2:
+                foster2_lc(partial_fraction)
+        else:
+            if zeroes[-1] > poles[-1]:
+                modded_f2_fracs = apart(numerator / (denominator*s))
+                foster2_rc(modded_f2_fracs)
+            if zeroes[-1] < poles[-1]:
+                foster2_rl(partial_fraction)
     elif optno == 2:
-        cauer1_lc(numerator, denominator)
+        for term in partial_fraction.as_ordered_terms():
+            num, denom = fraction(term)
+            if denom.as_poly(s).degree() == 2:
+                cauer1_lc(numerator, denominator)
+        else:
+            if zeroes[-1] < poles[-1]:
+                for term in partial_fraction.as_ordered_terms():
+                    if term.is_negative:
+                        cauer1_rc(numerator, denominator*s)
+                        
+                else: 
+                    cauer1_rl(numerator, denominator)
+            if zeroes[-1] >  poles[-1]:
+                for term in partial_fraction.as_ordered_terms():
+                    if term.is_negative:
+                        cauer1_rl(numerator, denominator*s)
+                        
+                else:
+                    cauer1_rc(numerator, denominator)
     elif optno == 3:
-        cauer2_lc(numerator, denominator)
+        for term in partial_fraction.as_ordered_terms():
+            num, denom = fraction(term)
+            if denom.as_poly(s).degree() == 2:
+                cauer2_lc(numerator, denominator)
+        else:
+            if zeroes[-1] > poles[-1]:
+                for term in partial_fraction.as_ordered_terms():
+                    if term.is_negative:
+                        cauer2_rc(numerator, denominator*s)
+                else: 
+                    cauer2_rl(numerator, denominator)
+            if zeroes[-1] < poles[-1]:
+                for term in partial_fraction.as_ordered_terms():
+                    if term.is_negative:
+                        cauer2_rl(numerator, denominator*s)
+                else:
+                    cauer2_rc(numerator, denominator)    
     else:
         print("Invalid option")
         exit()
@@ -195,15 +250,17 @@ def foster1_rc(partial_fraction):
                 k = num/coeffs[0]
                 sigma = coeffs[1]/coeffs[0]
 
-                rc_pairs.append(k/sigma, 1/k)
+                rc_pairs.append((k/sigma, 1/k))
                 print("RC pairs: ", rc_pairs)
                 
 def foster1_rl(partial_fraction):
+    print(f"foster partial_fraction: {partial_fraction}")
     l0 = 0 
     res = 0
     rl_pairs = []
     
     for term in partial_fraction.as_ordered_terms():
+        term = term*s
         num, denom = fraction(term)
         
         if denom.is_number and num.is_number:
@@ -230,7 +287,7 @@ def foster1_rl(partial_fraction):
                     k = num_coeffs[0]/denom_coeffs[0]
                     sigma = denom_coeffs[1]/denom_coeffs[0]
 
-                    rl_pairs.append(1/k, k/sigma)
+                    rl_pairs.append((k, k/sigma))
                     print("RL pairs: ", rl_pairs)
     
 def foster2_rc(partial_fraction):
@@ -239,6 +296,7 @@ def foster2_rc(partial_fraction):
     rc_pairs = []
     
     for term in partial_fraction.as_ordered_terms():
+        term = term*s
         num, denom = fraction(term)
         
         if denom.is_number and num.is_number:
@@ -265,7 +323,7 @@ def foster2_rc(partial_fraction):
                     k = num_coeffs[0]/denom_coeffs[0]
                     sigma = denom_coeffs[1]/denom_coeffs[0]
 
-                    rc_pairs.append(1/k, k/sigma)
+                    rc_pairs.append((1/k, k/sigma))
                     print("RC pairs: ", rc_pairs)
 
 def foster2_rl(partial_fraction):
@@ -298,14 +356,14 @@ def foster2_rl(partial_fraction):
                 k = num/coeffs[0]
                 sigma = coeffs[1]/coeffs[0]
 
-                rl_pairs.append(sigma/k, 1/k)
+                rl_pairs.append((sigma/k, 1/k))
                 print("RL pairs: ", rl_pairs)
 
 def cauer1_rc(num, denom):
     rc_terms = []
     
     # recursive function to find the l value
-    def find_r_c_value(dividend, divisor):
+    def find_r_c_value(dividend, divisor):  
         print(dividend.degree(), divisor.degree())
         if dividend.degree() > 0:
             if dividend.degree() >= divisor.degree():
@@ -343,13 +401,16 @@ def cauer1_rl(num, denom):
     # recursive function to find the l value
     def find_r_l_value(dividend, divisor):
         print(dividend.degree(), divisor.degree())
+        print("n Dividend: ", dividend)
+        print("n Divisor: ", divisor)
         if dividend.degree() > 0:
             if dividend.degree() >= divisor.degree():
                 ans = div(dividend, divisor, domain='QQ')
                 quotient = ans[0]
                 remainder = ans[1]
                 print("Quotient: ", quotient)
-                
+                print("Remainder: ", remainder)
+                print("Divisor: ", divisor)
                 if quotient.degree() == 1:
                     rl_terms.append(quotient.coeff_monomial(s))
                 elif quotient.degree() == 0:
@@ -464,14 +525,13 @@ def cauer2_rl(num, denom):
 class PolynomialDegreeZeroException(Exception):
     pass
 
-# # Add a resistor
-# d.add(elm.Resistor().label('R'))
+def cauer_division(dividend, divisor): #takes in two polynomials
+    dividend_coeffs = dividend.all_coeffs()
+    divisor_coeffs = divisor.all_coeffs()
+    
+    
 
-# # Add an inductor
-# d.add(elm.Inductor().right().label('L'))
-
-
-
+#  REMOVE MOD 2 FOR LEN
 def foster1_lc_df(c0, l_inf, lc_pairs):
     c0_label = f"C0 = {c0}F"
     l_inf_label = f"L_inf = {l_inf}H"    
@@ -500,6 +560,5 @@ def foster1_lc_df(c0, l_inf, lc_pairs):
         for i in range(pair_count+4):
             elm.Line().left()
             
-        elm.Dot()   
+        elm.Dot()
         d.draw()
-    
