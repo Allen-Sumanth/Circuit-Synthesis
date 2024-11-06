@@ -1,4 +1,4 @@
-from sympy import symbols, apart, fraction, sympify, init_printing, div, Poly, Mul
+from sympy import symbols, apart, fraction, sympify, init_printing
 import schemdraw as schem
 import schemdraw.elements as elm 
 import userinterface as ui
@@ -121,6 +121,7 @@ def foster1_lc(partial_fraction):
                 c_value = 1/k
                 lc_pairs.append((l_value, c_value))
                 print("LC pairs: ", lc_pairs)           
+    print("calling drawing function")
     foster1_lc_df(c0, l_inf, lc_pairs)
 
 def foster2_lc(partial_fraction):
@@ -153,7 +154,7 @@ def foster2_lc(partial_fraction):
                 c_value = k/sigma
                 lc_pairs.append((l_value, c_value))
                 print("LC pairs: ", lc_pairs)
-    return l0, c_inf, lc_pairs
+    foster2_lc_df(l0, c_inf, lc_pairs)
 
 def cauer1_lc(num, denom):
     lc_terms = []
@@ -180,7 +181,7 @@ def cauer1_lc(num, denom):
         find_l_c_value(dividend=numerator, divisor=denominator)
     except PolynomialDegreeZeroException as e:
         print(e)   
-    return lc_terms
+    cauer1_lc_df(lc_terms)
     
 def cauer2_lc(num, denom):
     cl_terms = []
@@ -218,7 +219,7 @@ def cauer2_lc(num, denom):
     except PolynomialDegreeZeroException as e:
         print(e)
         
-    return cl_terms
+    cauer2_cl_df(cl_terms)
 
 def foster1_rc(partial_fraction):
     c0 = 0 
@@ -289,6 +290,7 @@ def foster1_rl(partial_fraction):
 
                     rl_pairs.append((k, k/sigma))
                     print("RL pairs: ", rl_pairs)
+    cauer1_lc_df(rl_pairs)
     
 def foster2_rc(partial_fraction):
     c0 = 0 
@@ -427,7 +429,7 @@ def cauer1_rl(num, denom):
         find_r_l_value(dividend=numerator, divisor=denominator)
     except PolynomialDegreeZeroException as e:
         print(e)   
-    return rl_terms
+    cauer1_lc_df(rl_terms)
 
 def cauer2_rc(num, denom):
     rc_terms = []
@@ -533,7 +535,6 @@ def cauer_division(dividend, divisor, is2=False): #takes in two polynomials
     # quotient: int, remainder: polyn
 
 def foster1_lc_df(c0, l_inf, lc_pairs):
-    print("Entered drawing env")
     c0_label = f"C0 = {c0}F"
     l_inf_label = f"L_inf = {l_inf}H"    
     pair_count = len(lc_pairs)
@@ -541,26 +542,237 @@ def foster1_lc_df(c0, l_inf, lc_pairs):
     with schem.Drawing() as d:
         elm.Dot()
         elm.Line().right()
-        elm.Capacitor().label(c0_label).right()
+        if c0 != 0:
+            elm.Capacitor().label(c0_label).right()
+        else:
+            elm.Line().right()
         
         for i in range(pair_count):
             elm.Line().up()
-            elm.Inductor().right().label(f"{lc_pairs[i][0]}H")
+            if lc_pairs[i][0] != 0:
+                elm.Inductor().right().label(f"{lc_pairs[i][0]}H")
+            else:
+                elm.Line().right()
             elm.Line().down()
             d.push()
             elm.Line().down()
-            elm.Capacitor().left().label(f"{lc_pairs[i][1]}F")
+            if lc_pairs[i][1] != 0:
+                elm.Capacitor().left().label(f"{lc_pairs[i][1]}F")
+            else: 
+                elm.Line().left()
             elm.Line().up()
             d.pop()
             elm.Line().right()
         
         elm.Line().right()
         elm.Line().down()
-        elm.Inductor().down().label(l_inf_label)
+        if l_inf != 0:
+            elm.Inductor().down().label(l_inf_label)
+        else:
+            elm.Line().down()
         elm.Line().down()
-        for i in range(pair_count+1):
+        for i in range(pair_count+4):
             elm.Line().left()
             
         elm.Dot()
         d.draw()
+
+def foster2_lc_df(l0, c_inf, lc_pairs):
+    l0_label = f"{l0}H"
+    c_inf_label = f"{c_inf}F"    
+    pair_count = len(lc_pairs)
+
     
+    with schem.Drawing() as d:
+        elm.Dot()
+        elm.Line().right()
+        elm.Line().right()  
+        d.push()
+        elm.Line().down()
+        if l0 != 0:
+            elm.Inductor().down().label(l0_label)
+        else:
+            elm.Switch().down()
+        elm.Line().down()
+        elm.Line().left()
+        elm.Line().left()
+        elm.Dot()
+        
+        if c_inf != 0:
+            d.pop()
+            elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.Line().down()
+            elm.Capacitor().down().label(c_inf_label)
+            elm.Line().down()
+            elm.Line().left()
+            elm.Line().left()        
+        
+        for i in range(pair_count):
+            d.pop()
+            elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.Inductor().down().label(f"{lc_pairs[i][0]}H")
+            elm.Line().down()
+            elm.Capacitor().down().label(f"{lc_pairs[i][1]}F")
+            elm.Line().left()
+            elm.Line().left()       
+        
+        d.draw()
+        
+def cauer1_lc_df(lc_pairs):  
+    pair_count = ceil(len(lc_pairs)/2)
+    
+    with schem.Drawing() as d:
+        elm.Dot()
+        for i in range(pair_count):
+            if i != 0:
+                d.pop()
+            elm.Line().right()
+            if lc_pairs[i] != 0:
+                elm.Inductor().right().label(f"{lc_pairs[2*i]}")
+            else:
+                elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.Line().down()
+            if lc_pairs[i+1] != 0:
+                elm.Capacitor().down().label(f"{lc_pairs[2*i+1]}")
+            else:
+                elm.Swtich().down()
+            elm.Line().down()
+            elm.Line().left()
+            elm.Line().left()       
+            elm.Line().left()
+            if i == 0:
+                elm.Dot()        
+        d.draw()
+                
+def cauer2_cl_df(cl_pairs):  
+    pair_count = ceil(len(cl_pairs)/2)
+        
+    with schem.Drawing() as d:
+        elm.Dot()
+        for i in range(0, pair_count, step=2):
+            if i != 0:
+                d.pop()
+            elm.Line().right()
+            if cl_pairs[i] != 0:
+                elm.Capacitor().right().label(f"{cl_pairs[i]}C")
+            else:
+                elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.Line().down()
+            if cl_pairs[i+1] != 0:
+                elm.Inductor().down().label(f"{cl_pairs[i+1]}H")
+            else:
+                elm.Swtich().down()
+            elm.Line().down()
+            elm.Line().left()
+            elm.Line().left()       
+            elm.Line().left()
+            if i == 0:
+                elm.Dot()        
+        d.draw()
+
+def foster1_rc_df(c0, res, rc_pairs):
+    c0_label = f"C0 = {c0}F"
+    res = f"{res}\N{GREEK CAPITAL LETTER OMEGA}"   
+    pair_count = len(rc_pairs)
+
+    with schem.Drawing() as d:
+        elm.Dot()
+        elm.Line().right()
+        if c0 != 0:
+            elm.Capacitor().label(c0_label).right()
+        else:
+            elm.Line().right()
+        
+        for i in range(pair_count):
+            elm.Line().up()
+            elm.ResistorIEEE().right().label(f"{rc_pairs[i][0]}\N{GREEK CAPITAL LETTER OMEGA}")
+            elm.Line().down()
+            d.push()
+            elm.Line().down()
+            elm.Capacitor().left().label(f"{rc_pairs[i][1]}F")
+            elm.Line().up()
+            d.pop()
+            elm.Line().right()
+        
+        elm.Line().right()
+        elm.Line().down()
+        if res != 0:
+            elm.ResistorIEEE().down().label(res)
+        else:
+            elm.Line().down()
+        elm.Line().down()
+        for i in range(pair_count+4):
+            elm.Line().left()
+            
+        elm.Dot()
+        d.draw()
+
+def foster1_rl_df(l0, res, rl_pairs):
+    l0_label = f"{l0}H"
+    res_label = f"{res}\N{GREEK CAPITAL LETTER OMEGA}"    
+    pair_count = ceil(len(rl_pairs)/2)
+    
+    with schem.Drawing() as d:
+        elm.Dot()
+        elm.Line().right()
+        elm.Line().right()  
+        d.push()
+        elm.Line().down()
+        if l0 != 0:
+            elm.Inductor().down().label(l0_label)
+        else:
+            elm.Switch().down()
+        elm.Line().down()
+        elm.Line().left()
+        elm.Line().left()
+        elm.Dot()
+        
+        if res != 0:
+            d.pop()
+            elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.Line().down()
+            elm.ResistorIEEE().down().label(res_label)
+            elm.Line().down()
+            elm.Line().left()
+            elm.Line().left()        
+        
+        for i in range(pair_count):
+            d.pop()
+            elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.Inductor().down().label(f"{rl_pairs[i][0]}H")
+            elm.Line().down()
+            elm.ResistorIEEE().down().label(f"{rl_pairs[i][1]}F")
+            elm.Line().left()
+            elm.Line().left()       
+        
+        d.draw()
+        
+def foster2_rc_df(c0, res, rc_pairs):
+    {}
+
+def foster2_rl_df(l0, res, rl_pairs):
+    {}
+    
+def cauer1_rc_df(rc_pairs):
+    {}
+    
+def cauer1_rl_df(rl_pairs):
+    {}
+
+def cauer2_rc_df(rc_pairs):
+    {}
+
+def cauer2_rl_df(rl_pairs):
+    {}
