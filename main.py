@@ -1,4 +1,4 @@
-from sympy import symbols, apart, fraction, sympify, init_printing, solve, sqrt, init_session
+from sympy import init_printing
 import userinterface as ui
 import computation as comp
 
