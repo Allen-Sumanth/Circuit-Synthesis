@@ -9,7 +9,6 @@ def synthesize():
     print(f"Numerator: {numerator}")
     print(f"Denominator: {denominator}")
     comp.synthesize(numerator, denominator)
-    
     root.destroy()
 
 options = ["Foster 1", "Foster 2", "Cauer 1", "Cauer 2"]

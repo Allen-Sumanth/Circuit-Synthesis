@@ -6,4 +6,3 @@ init_printing()
 
 # Run input window
 ui.root.mainloop()
-

@@ -21,22 +21,26 @@ def synthesize(num_raw, den_raw):
     print("\nPartial fraction:", partial_fraction,"\n")
     
     # Assign each option that we get to the specific function eg. foster1_computing_function
+    flag = False
     if optno == 0:
         for term in partial_fraction.as_ordered_terms():
             num, denom = fraction(term)
-            if denom.as_poly(s).degree() == 2:
+            if denom.as_poly(s).degree() >= 2:
                 foster1_lc(partial_fraction)
-        else:
+                flag = True
+        if not flag:
             if zeroes[-1] < poles[-1]:
                 foster1_rc(partial_fraction)
+
             if zeroes[-1] >  poles[-1]:
                 modded_f1_fracs = apart(numerator / (denominator*s))
                 foster1_rl(modded_f1_fracs)
     elif optno == 1:
         for term in partial_fraction.as_ordered_terms():
             num, denom = fraction(term)
-            if denom.as_poly(s).degree() == 2:
+            if denom.as_poly(s).degree() >= 2:
                 foster2_lc(partial_fraction)
+                break
         else:
             if zeroes[-1] > poles[-1]:
                 modded_f2_fracs = apart(numerator / (denominator*s))
@@ -46,14 +50,15 @@ def synthesize(num_raw, den_raw):
     elif optno == 2:
         for term in partial_fraction.as_ordered_terms():
             num, denom = fraction(term)
-            if denom.as_poly(s).degree() == 2:
+            if denom.as_poly(s).degree() >= 2:
                 cauer1_lc(numerator, denominator)
+                break
         else:
             if zeroes[-1] < poles[-1]:
                 for term in partial_fraction.as_ordered_terms():
                     if term.is_negative:
                         cauer1_rc(numerator, denominator*s)
-                        
+                        break
                 else: 
                     cauer1_rl(numerator, denominator)
             if zeroes[-1] >  poles[-1]:
@@ -68,6 +73,7 @@ def synthesize(num_raw, den_raw):
             num, denom = fraction(term)
             if denom.as_poly(s).degree() == 2:
                 cauer2_lc(numerator, denominator)
+                break
         else:
             if zeroes[-1] > poles[-1]:
                 for term in partial_fraction.as_ordered_terms():
@@ -157,11 +163,8 @@ def cauer1_lc(num, denom):
         print(dividend.degree(), divisor.degree())
         if dividend.degree() >= 1:
             if dividend.degree() > divisor.degree():
-                ans = div(dividend, divisor, domain='QQ')
-                quotient = ans[0]
-                remainder = ans[1]
-                print("Quotient: ", quotient)
-                lc_terms.append(quotient.coeff_monomial(s))
+                quotient, remainder = cauer_division(dividend, divisor)
+                lc_terms.append(quotient.as_poly(s).coeff_monomial(s))
                 print("LC terms: ", lc_terms)
                 find_l_c_value(dividend=divisor, divisor=remainder)
             else:
@@ -187,11 +190,8 @@ def cauer2_lc(num, denom):
         print(dividend.degree(), divisor.degree())
         if dividend.degree() >= 1:
             if dividend.degree() > divisor.degree():
-                ans = div(dividend, divisor, domain='QQ')
-                quotient = ans[0]
-                remainder = ans[1]
-                print("Quotient: ", quotient)
-                cl_terms.append(1/(quotient.coeff_monomial(1/s)))
+                quotient, remainder = cauer_division(dividend, divisor, True)
+                cl_terms.append(1/(quotient.as_poly(1/s).coeff_monomial(1/s)))
                 print("CL terms: ", cl_terms)
                 find_c_l_value(dividend=divisor, divisor=remainder)
             else:
@@ -214,7 +214,7 @@ def cauer2_lc(num, denom):
     poly_denom = new_denom.as_poly(1/s)
 
     try:
-        find_c_l_value(dividend=poly_denom, divisor=poly_num)
+        find_c_l_value(dividend=poly_num, divisor=poly_denom)
     except PolynomialDegreeZeroException as e:
         print(e)
         
@@ -367,15 +367,13 @@ def cauer1_rc(num, denom):
         print(dividend.degree(), divisor.degree())
         if dividend.degree() > 0:
             if dividend.degree() >= divisor.degree():
-                ans = div(dividend, divisor, domain='QQ')
-                quotient = ans[0]
-                remainder = ans[1]
-                print("Quotient: ", quotient)
+                quotient, remainder = cauer_division(dividend, divisor)
                 
-                if quotient.degree() == 1:
-                    rc_terms.append(quotient.coeff_monomial(s))
-                elif quotient.degree() == 0:
+                if quotient.is_number:
+                    print("Quotient: ", quotient)
                     rc_terms.append(quotient)
+                else:
+                    rc_terms.append(quotient.as_poly(s).coeff_monomial(s))
                     
                 print("RC terms: ", rc_terms)
                 find_r_c_value(dividend=divisor, divisor=remainder)
@@ -405,17 +403,13 @@ def cauer1_rl(num, denom):
         print("n Divisor: ", divisor)
         if dividend.degree() > 0:
             if dividend.degree() >= divisor.degree():
-                ans = div(dividend, divisor, domain='QQ')
-                quotient = ans[0]
-                remainder = ans[1]
-                print("Quotient: ", quotient)
-                print("Remainder: ", remainder)
-                print("Divisor: ", divisor)
-                if quotient.degree() == 1:
-                    rl_terms.append(quotient.coeff_monomial(s))
-                elif quotient.degree() == 0:
+                quotient, remainder = cauer_division(dividend, divisor)
+                print(f"remainder: {remainder}")
+                if quotient.is_number:
+                    print("Quotient: ", quotient)
                     rl_terms.append(1/quotient)
-                    
+                else:
+                    rl_terms.append(quotient.as_poly(s).coeff_monomial(s))
                 print("RL terms: ", rl_terms)
                 find_r_l_value(dividend=divisor, divisor=remainder)
             else:
@@ -425,6 +419,7 @@ def cauer1_rl(num, denom):
                 find_r_l_value(dividend=divisor, divisor=dividend)
         elif dividend.degree() == 0:
             rl_terms.append(divisor/dividend)
+            print("RL terms: ", rl_terms)
             raise PolynomialDegreeZeroException("Dividend degree is 0")
         
     numerator, denominator = num.as_poly(s), denom.as_poly(s)
@@ -441,15 +436,13 @@ def cauer2_rc(num, denom):
     def find_r_c_value(dividend, divisor):
         print(dividend.degree(), divisor.degree())
         if dividend.degree() >= 1:
-            if dividend.degree() > divisor.degree():
-                ans = div(dividend, divisor, domain='QQ')
-                quotient = ans[0]
-                remainder = ans[1]
-                print("Quotient: ", quotient)
-                if quotient.degree() == 1:
-                    rc_terms.append(1/quotient.coeff_monomial(s))
-                elif quotient.degree() == 0:
+            if dividend.degree() >= divisor.degree():
+                quotient, remainder = cauer_division(dividend, divisor, True)
+                if quotient.is_number:
+                    print("Quotient: ", quotient)
                     rc_terms.append(1/quotient)
+                else:
+                    rc_terms.append(1/quotient.as_poly(1/s).coeff_monomial(1/s))
                 print("RC terms: ", rc_terms)
                 find_r_c_value(dividend=divisor, divisor=remainder)
             else:
@@ -472,7 +465,7 @@ def cauer2_rc(num, denom):
     poly_denom = new_denom.as_poly(1/s)
 
     try:
-        find_r_c_value(dividend=poly_denom, divisor=poly_num)
+        find_r_c_value(dividend=poly_num, divisor=poly_denom)
     except PolynomialDegreeZeroException as e:
         print(e)
         
@@ -485,20 +478,18 @@ def cauer2_rl(num, denom):
     def find_r_l_value(dividend, divisor):
         print(dividend.degree(), divisor.degree())
         if dividend.degree() >= 1:
-            if dividend.degree() > divisor.degree():
-                ans = div(dividend, divisor, domain='QQ')
-                quotient = ans[0]
-                remainder = ans[1]
-                print("Quotient: ", quotient)
-                if quotient.degree() == 1:
-                    rl_terms.append(1/quotient.coeff_monomial(s))
-                elif quotient.degree() == 0:
+            if dividend.degree() >= divisor.degree():
+                quotient, remainder = cauer_division(dividend, divisor, True)
+                if quotient.is_number:
+                    print("Quotient: ", quotient)
                     rl_terms.append(quotient)
+                else:
+                    rl_terms.append(quotient.as_poly(1/s).coeff_monomial(1/s))
                 print("RL terms: ", rl_terms)
                 find_r_l_value(dividend=divisor, divisor=remainder)
             else:
                 rl_terms.append(0)
-                print("RL terms: ", rl_terms)
+                print("dividend degree less than divisor! RL terms: ", rl_terms)
                 find_r_l_value(dividend=divisor, divisor=dividend)
         elif dividend.degree() == 0:
             rl_terms.append(dividend/divisor)
@@ -516,26 +507,36 @@ def cauer2_rl(num, denom):
     poly_denom = new_denom.as_poly(1/s)
 
     try:
-        find_r_l_value(dividend=poly_denom, divisor=poly_num)
+        find_r_l_value(dividend=poly_num, divisor=poly_denom)
     except PolynomialDegreeZeroException as e:
         print(e)
-        
     return rl_terms
 
 class PolynomialDegreeZeroException(Exception):
     pass
 
-def cauer_division(dividend, divisor): #takes in two polynomials
-    dividend_coeffs = dividend.all_coeffs()
-    divisor_coeffs = divisor.all_coeffs()
+def cauer_division(dividend, divisor, is2=False): #takes in two polynomials
+    print(f"dividend: {dividend}")
+    print(f"divisor: {divisor}")
+    if is2:
+        dividend_monom = dividend.as_expr().as_ordered_terms()[-1]
+        divisor_monom = divisor.as_expr().as_ordered_terms()[-1] 
+    else:
+        dividend_monom = dividend.as_expr().as_ordered_terms()[0]
+        divisor_monom = divisor.as_expr().as_ordered_terms()[0]
+    print(f"dividend_monom: {dividend_monom} divisor_monom: {divisor_monom}")
+    cou_quotient = dividend_monom/divisor_monom
+    subtrahend = divisor*cou_quotient
+    cou_remainder = dividend - subtrahend
     
-    
+    return cou_quotient, cou_remainder
+    # quotient: int, remainder: polyn
 
-#  REMOVE MOD 2 FOR LEN
 def foster1_lc_df(c0, l_inf, lc_pairs):
+    print("Entered drawing env")
     c0_label = f"C0 = {c0}F"
     l_inf_label = f"L_inf = {l_inf}H"    
-    pair_count = ceil(len(lc_pairs)/2)
+    pair_count = len(lc_pairs)
 
     with schem.Drawing() as d:
         elm.Dot()
@@ -557,8 +558,9 @@ def foster1_lc_df(c0, l_inf, lc_pairs):
         elm.Line().down()
         elm.Inductor().down().label(l_inf_label)
         elm.Line().down()
-        for i in range(pair_count+4):
+        for i in range(pair_count+1):
             elm.Line().left()
             
         elm.Dot()
         d.draw()
+    
