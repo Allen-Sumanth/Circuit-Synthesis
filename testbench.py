@@ -30,7 +30,7 @@ with schem.Drawing() as d:
         if lc_pairs[i+1] != 0:
             elm.Capacitor().down().label(lc_pairs[i+1])
         else:
-            elm.Swtich().down()
+            elm.Switch().down()
         elm.Line().down()
         elm.Line().left()
         elm.Line().left()       

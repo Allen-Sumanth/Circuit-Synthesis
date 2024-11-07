@@ -253,6 +253,7 @@ def foster1_rc(partial_fraction):
 
                 rc_pairs.append((k/sigma, 1/k))
                 print("RC pairs: ", rc_pairs)
+    foster1_rc_df(c0, res, rc_pairs)
                 
 def foster1_rl(partial_fraction):
     print(f"foster partial_fraction: {partial_fraction}")
@@ -290,7 +291,7 @@ def foster1_rl(partial_fraction):
 
                     rl_pairs.append((k, k/sigma))
                     print("RL pairs: ", rl_pairs)
-    cauer1_lc_df(rl_pairs)
+    foster1_rl_df(l0, res, rl_pairs)
     
 def foster2_rc(partial_fraction):
     c0 = 0 
@@ -327,6 +328,7 @@ def foster2_rc(partial_fraction):
 
                     rc_pairs.append((1/k, k/sigma))
                     print("RC pairs: ", rc_pairs)
+    foster2_rc_df(c0, res, rc_pairs)
 
 def foster2_rl(partial_fraction):
     l0 = 0 
@@ -367,7 +369,7 @@ def cauer1_rc(num, denom):
     # recursive function to find the l value
     def find_r_c_value(dividend, divisor):  
         print(dividend.degree(), divisor.degree())
-        if dividend.degree() > 0:
+        if dividend.degree() >= 1:
             if dividend.degree() >= divisor.degree():
                 quotient, remainder = cauer_division(dividend, divisor)
                 
@@ -393,7 +395,8 @@ def cauer1_rc(num, denom):
         find_r_c_value(dividend=numerator, divisor=denominator)
     except PolynomialDegreeZeroException as e:
         print(e)   
-    return rc_terms
+    print("RC terms: ", rc_terms)
+    cauer1_rc_df(rc_terms)
 
 def cauer1_rl(num, denom):
     rl_terms = []
@@ -429,7 +432,7 @@ def cauer1_rl(num, denom):
         find_r_l_value(dividend=numerator, divisor=denominator)
     except PolynomialDegreeZeroException as e:
         print(e)   
-    cauer1_lc_df(rl_terms)
+    cauer1_rl_df(rl_terms)
 
 def cauer2_rc(num, denom):
     rc_terms = []
@@ -470,8 +473,8 @@ def cauer2_rc(num, denom):
         find_r_c_value(dividend=poly_num, divisor=poly_denom)
     except PolynomialDegreeZeroException as e:
         print(e)
-        
-    return rc_terms
+    print("RC terms: ", rc_terms)
+    cauer2_rc_df(rc_terms)
 
 def cauer2_rl(num, denom):
     rl_terms = []
@@ -486,7 +489,7 @@ def cauer2_rl(num, denom):
                     print("Quotient: ", quotient)
                     rl_terms.append(quotient)
                 else:
-                    rl_terms.append(quotient.as_poly(1/s).coeff_monomial(1/s))
+                    rl_terms.append(1/quotient.as_poly(1/s).coeff_monomial(1/s))
                 print("RL terms: ", rl_terms)
                 find_r_l_value(dividend=divisor, divisor=remainder)
             else:
@@ -512,7 +515,8 @@ def cauer2_rl(num, denom):
         find_r_l_value(dividend=poly_num, divisor=poly_denom)
     except PolynomialDegreeZeroException as e:
         print(e)
-    return rl_terms
+    print("RL terms: ", rl_terms)
+    cauer2_rl_df(rl_terms)
 
 class PolynomialDegreeZeroException(Exception):
     pass
@@ -631,17 +635,17 @@ def cauer1_lc_df(lc_pairs):
             if i != 0:
                 d.pop()
             elm.Line().right()
-            if lc_pairs[i] != 0:
-                elm.Inductor().right().label(f"{lc_pairs[2*i]}")
+            if lc_pairs[2*i] != 0:
+                elm.Inductor().right().label(f"{lc_pairs[2*i]}H")
             else:
                 elm.Line().right()
             elm.Line().right()  
             d.push()
             elm.Line().down()
-            if lc_pairs[i+1] != 0:
-                elm.Capacitor().down().label(f"{lc_pairs[2*i+1]}")
+            if (2*i+1)<len(lc_pairs) and lc_pairs[2*i+1] != 0:
+                elm.Capacitor().down().label(f"{lc_pairs[2*i+1]}F")
             else:
-                elm.Swtich().down()
+                elm.Line().down()
             elm.Line().down()
             elm.Line().left()
             elm.Line().left()       
@@ -659,17 +663,17 @@ def cauer2_cl_df(cl_pairs):
             if i != 0:
                 d.pop()
             elm.Line().right()
-            if cl_pairs[i] != 0:
-                elm.Capacitor().right().label(f"{cl_pairs[i]}C")
+            if cl_pairs[2*i] != 0:
+                elm.Capacitor().right().label(f"{cl_pairs[i]}F")
             else:
                 elm.Line().right()
             elm.Line().right()  
             d.push()
             elm.Line().down()
-            if cl_pairs[i+1] != 0:
-                elm.Inductor().down().label(f"{cl_pairs[i+1]}H")
+            if (2*i+1)<len(cl_pairs) and cl_pairs[2*i+1] != 0:
+                elm.Inductor().down().label(f"{cl_pairs[2*i+1]}H")
             else:
-                elm.Swtich().down()
+                elm.Line().down()
             elm.Line().down()
             elm.Line().left()
             elm.Line().left()       
@@ -679,7 +683,7 @@ def cauer2_cl_df(cl_pairs):
         d.draw()
 
 def foster1_rc_df(c0, res, rc_pairs):
-    c0_label = f"C0 = {c0}F"
+    c0_label = f"{c0}F"
     res = f"{res}\N{GREEK CAPITAL LETTER OMEGA}"   
     pair_count = len(rc_pairs)
 
@@ -693,11 +697,17 @@ def foster1_rc_df(c0, res, rc_pairs):
         
         for i in range(pair_count):
             elm.Line().up()
-            elm.ResistorIEEE().right().label(f"{rc_pairs[i][0]}\N{GREEK CAPITAL LETTER OMEGA}")
+            if rc_pairs[i] != 0:
+                elm.ResistorIEEE().right().label(f"{rc_pairs[i][0]}\N{GREEK CAPITAL LETTER OMEGA}")
+            else:
+                elm.Line().right()
             elm.Line().down()
             d.push()
             elm.Line().down()
-            elm.Capacitor().left().label(f"{rc_pairs[i][1]}F")
+            if rc_pairs[i][1] != 0:
+                elm.Capacitor().left().label(f"{rc_pairs[i][1]}F")
+            else:
+                elm.Line().left()
             elm.Line().up()
             d.pop()
             elm.Line().right()
@@ -709,7 +719,7 @@ def foster1_rc_df(c0, res, rc_pairs):
         else:
             elm.Line().down()
         elm.Line().down()
-        for i in range(pair_count+4):
+        for i in range(pair_count+5):
             elm.Line().left()
             
         elm.Dot()
@@ -718,7 +728,7 @@ def foster1_rc_df(c0, res, rc_pairs):
 def foster1_rl_df(l0, res, rl_pairs):
     l0_label = f"{l0}H"
     res_label = f"{res}\N{GREEK CAPITAL LETTER OMEGA}"    
-    pair_count = ceil(len(rl_pairs)/2)
+    pair_count = len(rl_pairs)
     
     with schem.Drawing() as d:
         elm.Dot()
@@ -753,26 +763,177 @@ def foster1_rl_df(l0, res, rl_pairs):
             d.push()
             elm.Inductor().down().label(f"{rl_pairs[i][0]}H")
             elm.Line().down()
-            elm.ResistorIEEE().down().label(f"{rl_pairs[i][1]}F")
+            elm.ResistorIEEE().down().label(f"{rl_pairs[i][1]}\N{GREEK CAPITAL LETTER OMEGA}")
             elm.Line().left()
             elm.Line().left()       
         
         d.draw()
         
 def foster2_rc_df(c0, res, rc_pairs):
-    {}
-
+    c0_label = f"{c0}F"
+    res_label = f"{res}\N{GREEK CAPITAL LETTER OMEGA}"    
+    pair_count = len(rc_pairs)
+    
+    with schem.Drawing() as d:
+        elm.Dot()
+        elm.Line().right()
+        elm.Line().right()  
+        d.push()
+        elm.Line().down()
+        if c0 != 0:
+            elm.Capacitor().down().label(c0_label)
+        else:
+            elm.Switch().down()
+        elm.Line().down()
+        elm.Line().left()
+        elm.Line().left()
+        elm.Dot()
+        
+        if res != 0:
+            d.pop()
+            elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.Line().down()
+            elm.ResistorIEEE().down().label(res_label)
+            elm.Line().down()
+            elm.Line().left()
+            elm.Line().left()        
+        
+        for i in range(pair_count):
+            d.pop()
+            elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.ResistorIEEE().down().label(f"{rc_pairs[i][0]}H")
+            elm.Line().down()
+            elm.Capacitor().down().label(f"{rc_pairs[i][1]}\N{GREEK CAPITAL LETTER OMEGA}")
+            elm.Line().left()
+            elm.Line().left()       
+        
+        d.draw()
+            
 def foster2_rl_df(l0, res, rl_pairs):
     {}
     
 def cauer1_rc_df(rc_pairs):
-    {}
+    pair_count = ceil(len(rc_pairs)/2)
+    
+    with schem.Drawing() as d:
+        elm.Dot()
+        for i in range(3):
+            elm.Line().right()
+            d.push()
+        for i in range(pair_count):
+            
+            elm.Line().down()
+            if rc_pairs[2*i] != 0:
+                elm.Capacitor().down().label(f"{rc_pairs[2*i]}F")
+            else:
+                elm.Line().down()
+            elm.Line().down()
+            elm.Line().left()
+            elm.Line().left()       
+            elm.Line().left()
+            if i == 0:
+                elm.Dot()        
+                
+            d.pop()
+            elm.Line().right()
+            if (2*i+1)<len(rc_pairs) and rc_pairs[2*i+1] != 0:
+                elm.ResistorIEEE().right().label(f"{rc_pairs[2*i+1]}\N{GREEK CAPITAL LETTER OMEGA}")
+            else:
+                elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            
+        d.draw()
     
 def cauer1_rl_df(rl_pairs):
-    {}
+    pair_count = ceil(len(rl_pairs)/2)
+    
+    with schem.Drawing() as d:
+        elm.Dot()
+        for i in range(3):
+            elm.Line().right()
+            d.push()
+        for i in range(pair_count):
+            
+            elm.Line().down()
+            if rl_pairs[2*i] != 0:
+                elm.ResistorIEEE().down().label(f"{rl_pairs[2*i]}\N{GREEK CAPITAL LETTER OMEGA}")
+            else:
+                elm.Line().down()
+            elm.Line().down()
+            elm.Line().left()
+            elm.Line().left()       
+            elm.Line().left()
+            if i == 0:
+                elm.Dot()        
+                
+            d.pop()
+            elm.Line().right()
+            if (2*i+1)<len(rl_pairs) and rl_pairs[2*i+1] != 0:
+                elm.Inductor().right().label(f"{rl_pairs[2*i+1]}H")
+            else:
+                elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            
+        d.draw()
 
 def cauer2_rc_df(rc_pairs):
-    {}
-
+    pair_count = ceil(len(rc_pairs)/2)
+    
+    with schem.Drawing() as d:
+        elm.Dot()
+        for i in range(pair_count):
+            if i != 0:
+                d.pop()
+            elm.Line().right()
+            if rc_pairs[2*i] != 0:
+                elm.Capacitor().right().label(f"{rc_pairs[2*i]}F")
+            else:
+                elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.Line().down()
+            if (2*i+1)<len(rc_pairs) and rc_pairs[2*i+1] != 0:
+                elm.Resistor().down().label(f"{rc_pairs[2*i+1]}\N{GREEK CAPITAL LETTER OMEGA}")
+            else:
+                elm.Line().down()
+            elm.Line().down()
+            elm.Line().left()
+            elm.Line().left()       
+            elm.Line().left()
+            if i == 0:
+                elm.Dot()        
+        d.draw()
+        
 def cauer2_rl_df(rl_pairs):
-    {}
+    pair_count = ceil(len(rl_pairs)/2)
+    
+    with schem.Drawing() as d:
+        elm.Dot()
+        for i in range(pair_count):
+            if i != 0:
+                d.pop()
+            elm.Line().right()
+            if rl_pairs[2*i] != 0:
+                elm.ResistorIEEE().right().label(f"{rl_pairs[2*i]}\N{GREEK CAPITAL LETTER OMEGA}")
+            else:
+                elm.Line().right()
+            elm.Line().right()  
+            d.push()
+            elm.Line().down()
+            if (2*i+1)<len(rl_pairs) and rl_pairs[2*i+1] != 0:
+                elm.Capacitor().down().label(f"{rl_pairs[2*i+1]}F")
+            else:
+                elm.Line().down()
+            elm.Line().down()
+            elm.Line().left()
+            elm.Line().left()       
+            elm.Line().left()
+            if i == 0:
+                elm.Dot()        
+        d.draw()
