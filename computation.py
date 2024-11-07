@@ -659,7 +659,7 @@ def cauer2_cl_df(cl_pairs):
         
     with schem.Drawing() as d:
         elm.Dot()
-        for i in range(0, pair_count, step=2):
+        for i in range(pair_count):
             if i != 0:
                 d.pop()
             elm.Line().right()
