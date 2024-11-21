@@ -362,6 +362,7 @@ def foster2_rl(partial_fraction):
 
                 rl_pairs.append((sigma/k, 1/k))
                 print("RL pairs: ", rl_pairs)
+    foster2_rl_df(l0, res, rl_pairs)
 
 def cauer1_rc(num, denom):
     rc_terms = []
@@ -814,7 +815,47 @@ def foster2_rc_df(c0, res, rc_pairs):
         d.draw()
             
 def foster2_rl_df(l0, res, rl_pairs):
-    {}
+    l0_label = f"{l0}H"
+    res = f"{res}\N{GREEK CAPITAL LETTER OMEGA}"   
+    pair_count = len(rl_pairs)
+
+    with schem.Drawing() as d:
+        elm.Dot()
+        elm.Line().right()
+        if l0 != 0:
+            elm.Inductor().label(l0_label).right()
+        else:
+            elm.Line().right()
+        
+        for i in range(pair_count):
+            elm.Line().up()
+            if rl_pairs[i] != 0:
+                elm.ResistorIEEE().right().label(f"{rl_pairs[i][0]}\N{GREEK CAPITAL LETTER OMEGA}")
+            else:
+                elm.Line().right()
+            elm.Line().down()
+            d.push()
+            elm.Line().down()
+            if rl_pairs[i][1] != 0:
+                elm.Inductor().left().label(f"{rl_pairs[i][1]}H")
+            else:
+                elm.Line().left()
+            elm.Line().up()
+            d.pop()
+            elm.Line().right()
+        
+        elm.Line().right()
+        elm.Line().down()
+        if res != 0:
+            elm.ResistorIEEE().down().label(res)
+        else:
+            elm.Line().down()
+        elm.Line().down()
+        for i in range(pair_count+5):
+            elm.Line().left()
+            
+        elm.Dot()
+        d.draw()
     
 def cauer1_rc_df(rc_pairs):
     pair_count = ceil(len(rc_pairs)/2)
